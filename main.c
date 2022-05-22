@@ -3,16 +3,18 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define ROWS 20
-#define COLUMNS 30
+#define ROWS 100
+#define COLUMNS 100
 
+int total_rows = 20;
+int total_columns = 30;
 int grid_size = 20;
 
 void initialize_matrix(int matrix[ROWS][COLUMNS]) 
 {
-	for (int r = 0; r < ROWS; r++)
+	for (int r = 0; r < total_rows; r++)
 	{
-		for (int c = 0; c < COLUMNS; c++)
+		for (int c = 0; c < total_columns; c++)
 		{
 			matrix[r][c] = 0;
 		}
@@ -21,15 +23,15 @@ void initialize_matrix(int matrix[ROWS][COLUMNS])
 
 int get_cell(int matrix[ROWS][COLUMNS], int r, int c)
 {
-	r = (r + ROWS) % ROWS;
-	c = (c + COLUMNS) % COLUMNS;
+	r = (r + total_rows) % total_rows;
+	c = (c + total_columns) % total_columns;
 	return matrix[r][c];
 }
 
 void set_cell(int matrix[ROWS][COLUMNS], int r, int c, int value)
 {
-	r = (r + ROWS) % ROWS;
-	c = (c + COLUMNS) % COLUMNS;
+	r = (r + total_rows) % total_rows;
+	c = (c + total_columns) % total_columns;
 	matrix[r][c] = value;
 }
 
@@ -55,9 +57,9 @@ int get_neighbor_count(int matrix[ROWS][COLUMNS], int r, int c)
 
 void copy_matrix(int target[ROWS][COLUMNS], int source[ROWS][COLUMNS])
 {
-	for (int r = 0; r < ROWS; r++)
+	for (int r = 0; r < total_rows; r++)
 	{
-		for (int c = 0; c < COLUMNS; c++)
+		for (int c = 0; c < total_columns; c++)
 		{
 			target[r][c] = source[r][c];
 		}
@@ -69,9 +71,9 @@ void evolution(int matrix[ROWS][COLUMNS])
 {
 	int tmp[ROWS][COLUMNS];
 	initialize_matrix(tmp);
-	for (int r = 0; r < ROWS; r++)
+	for (int r = 0; r < total_rows; r++)
 	{
-		for (int c = 0; c < COLUMNS; c++)
+		for (int c = 0; c < total_columns; c++)
 		{
 			int cnt = get_neighbor_count(matrix, r, c);
 			if (cnt == 0 || cnt == 1) 
@@ -109,23 +111,28 @@ void evolution(int matrix[ROWS][COLUMNS])
 
 void load_matrix(char* filename, int matrix[ROWS][COLUMNS])
 {
+	char line[COLUMNS + 4];
 	FILE* file = fopen(filename, "r");
 	if (file == NULL) return;
-	char ch;
-	for (int r = 0; r < ROWS; r++)
+	if (fscanf(file, "%d %d", &total_rows, &total_columns)) 
 	{
-		char line[COLUMNS + 4];
 		if (fgets(line, COLUMNS + 4, file)) {
-			for (int c = 0; c < COLUMNS; c++)
+			char ch;
+			for (int r = 0; r < total_rows; r++)
 			{
-				ch = line[c];
-				if (ch == '1')
-				{
-					matrix[r][c] = 1;
-				}
-				else
-				{
-					matrix[r][c] = 0;
+				if (fgets(line, COLUMNS + 4, file)) {
+					for (int c = 0; c < total_columns; c++)
+					{
+						ch = line[c];
+						if (ch == '1')
+						{
+							matrix[r][c] = 1;
+						}
+						else
+						{
+							matrix[r][c] = 0;
+						}
+					}
 				}
 			}
 		}
@@ -135,6 +142,7 @@ void load_matrix(char* filename, int matrix[ROWS][COLUMNS])
 void save_matrix(char* filename, int matrix[ROWS][COLUMNS]) 
 {
 	FILE* file = fopen(filename, "w");
+	fprintf(file, "%d %d\n", total_rows, total_columns);
 	for (int r = 0; r < ROWS; r++)
 	{
 		for (int c = 0; c < COLUMNS; c++)
@@ -151,9 +159,9 @@ void draw_matrix(int matrix[ROWS][COLUMNS], SDL_Renderer* renderer)
 {
 	
 	
-	for (int r = 0; r < ROWS; r++)
+	for (int r = 0; r < total_rows; r++)
 	{
-		for (int c = 0; c < COLUMNS; c++)
+		for (int c = 0; c < total_columns; c++)
 		{
 			SDL_Rect rect = { c * grid_size, r * grid_size, grid_size, grid_size };
 			if (matrix[r][c])
@@ -207,7 +215,7 @@ int main(int argc, char* argv[]) {
 
 
 	SDL_Surface* open_img = SDL_LoadBMP("open.bmp");
-	SDL_Surface* start_img = SDL_LoadBMP("play.bmp");
+	SDL_Surface* start_img = SDL_LoadBMP("start.bmp");
 
 	SDL_Texture* open_img_texture = SDL_CreateTextureFromSurface(renderer, open_img);
 	SDL_Texture* start_img_texture = SDL_CreateTextureFromSurface(renderer, start_img);
@@ -245,7 +253,7 @@ int main(int argc, char* argv[]) {
 					int px = event.button.x;
 					int py = event.button.y;
 					if (px >= open_rect.x && px <= open_rect.x + open_rect.w && py >= open_rect.y && py <= open_rect.y + open_rect.h) {
-						load_matrix("glider.txt", matrix);
+						load_matrix("input.txt", matrix);
 					}
 					else if (px >= start_rect.x && px <= start_rect.x + start_rect.w && py >= start_rect.y && py <= start_rect.y + start_rect.h) {
 						started = !started;
@@ -253,7 +261,7 @@ int main(int argc, char* argv[]) {
 					else if (!started) {
 						int c = px / grid_size;
 						int r = py / grid_size;
-						if (r < ROWS && c < COLUMNS) {
+						if (r < total_rows && c < total_columns) {
 							matrix[r][c] = !matrix[r][c];
 						}
 					}
@@ -281,7 +289,7 @@ int main(int argc, char* argv[]) {
 		SDL_Delay(200);
 	}
 
-	save_matrix("glider.txt", matrix);
+	save_matrix("input.txt", matrix);
 
 
 	//destory renderer
